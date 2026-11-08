@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vedruna Futsal 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0D1B2A;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        /* UI Overlays */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #FFD60A;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        h2 {
+            font-size: 1.1rem;
+            color: #E0E1DD;
+            margin-bottom: 25px;
+            font-weight: 400;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+        .btn {
+            background: #1D3557;
+            color: white;
+            border: 2px solid #FFD60A;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .btn:active {
+            transform: scale(0.96);
+            background: #FFD60A;
+            color: #0D1B2A;
+        }
+        /* HUD in-game */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            box-sizing: border-box;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .scoreboard {
+            background: rgba(13, 27, 42, 0.85);
+            border: 2px solid #FFD60A;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .timer {
+            background: rgba(27, 38, 59, 0.9);
+            border: 2px solid #415A77;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: #FFD60A;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        /* Touch Controls */
+        #controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 140px;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px 20px 30px;
+            box-sizing: border-box;
+            align-items: flex-end;
+        }
+        #joystick-base {
+            width: 110px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 214, 10, 0.6);
+            border-radius: 50%;
+            position: relative;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #joystick-stick {
+            width: 50px;
+            height: 50px;
+            background: #FFD60A;
+            border-radius: 50%;
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        .action-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 2px solid #FFD60A;
+            background: rgba(29, 53, 87, 0.85);
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
+        }
+        .action-btn:active {
+            transform: scale(0.9);
+            background: #FFD60A;
+            color: #0D1B2A;
+        }
+        /* Roster Modal */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background: #1B263B;
+            border: 2px solid #FFD60A;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 20;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .player-card {
+            background: #0D1B2A;
+            border: 1px solid #415A77;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+    </style>
+    <!-- Three.js CDN for robust 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- Main Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <h1>Vedruna Futsal 3D</h1>
+        <h2>CFS Cal Xirricló Balaguer Vedruna A (2026-2027)</h2>
+        <div class="btn-group">
+            <button class="btn" onclick="startGame('quick')">Partido Rápido</button>
+            <button class="btn" onclick="startGame('league')">Liga Benjamín</button>
+            <button class="btn" onclick="startGame('training')">Entrenamiento</button>
+            <button class="btn" onclick="showRoster()">Plantilla</button>
+        </div>
+    </div>
+
+    <!-- Roster Modal -->
+    <div id="roster-modal" class="modal hidden">
+        <h2 style="margin-bottom:10px; color:#FFD60A; text-align:center;">Plantilla Benjamín A</h2>
+        <p style="text-align:center; font-size:0.85rem; color:#A7A9BE;">Sin dorsales oficiales asignados</p>
+        <div id="roster-list" class="roster-grid"></div>
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn" style="width:140px; padding:8px;" onclick="hideRoster()">Volver</button>
+        </div>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud" class="hidden">
+        <div class="scoreboard">
+            <span id="team-name">VEDRUNA</span>
+            <span id="score">0 - 0</span>
+            <span id="rival-name">RIVAL</span>
+        </div>
+        <div class="timer" id="timer">05:00</div>
+    </div>
+
+    <!-- Touch Controls -->
+    <div id="controls" class="hidden">
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+        <div class="action-buttons">
+            <div class="action-btn" ontouchstart="doAction('chutar')" onclick="doAction('chutar')">CHUTAR</div>
+            <div class="action-btn" ontouchstart="doAction('pasar')" onclick="doAction('pasar')">PASAR</div>
+            <div class="action-btn" ontouchstart="doAction('centrar')" onclick="doAction('centrar')">CENTRAR</div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        const playersData = [
+            "Jan", "Roger", "Jan (Castillo)", "Tomàs", "Miguel", "Blai", 
+            "Lluc", "Boubacare", "Oleguer", "Josep", "Hugo", "Sebastian", "Biel", "David", "Patrick"
+        ];
+
+        function showRoster() {
+            const list = document.getElementById('roster-list');
+            list.innerHTML = '';
+            playersData.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.innerHTML = `<strong>${p}</strong><br><span style="font-size:0.75rem; color:#888;">Sin dorsal</span>`;
+                list.appendChild(card);
+            });
+            document.getElementById('roster-modal').classList.remove('hidden');
+        }
+
+        function hideRoster() {
+            document.getElementById('roster-modal').classList.add('hidden');
+        }
+
+        let gameActive = false;
+        let scoreA = 0, scoreRival = 0;
+        let matchTime = 300; // 5 minutes
+
+        function startGame(mode) {
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+            gameActive = true;
+            init3D();
+        }
+
+        function doAction(action) {
+            if (!gameActive) return;
+            if (action === 'chutar') {
+                ballVel.z -= 0.8;
+                ballVel.y += 0.2;
+            } else if (action === 'pasar') {
+                ballVel.z -= 0.4;
+            } else if (action === 'centrar') {
+                ballVel.x += (Math.random() - 0.5) * 0.5;
+                ballVel.z -= 0.5;
+            }
+        }
+
+        // Three.js 3D Futsal Engine
+        let scene, camera, renderer, ball, player, rival, ballVel = {x:0, y:0, z:0};
+        let joyVector = {x: 0, y: 0};
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0D1B2A);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 12, 14);
+            camera.lookAt(0, 0, -2);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // Futsal Court (Wooden Floor look)
+            const courtGeo = new THREE.PlaneGeometry(16, 28);
+            const courtMat = new THREE.MeshStandardMaterial({ color: 0xD4A373, roughness: 0.4 });
+            const court = new THREE.Mesh(courtGeo, courtMat);
+            court.rotation.x = -Math.PI / 2;
+            scene.add(court);
+
+            // Court Lines
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 });
+            const pts = [
+                new THREE.Vector3(-8, 0.01, -14),
+                new THREE.Vector3(8, 0.01, -14),
+                new THREE.Vector3(8, 0.01, 14),
+                new THREE.Vector3(-8, 0.01, 14),
+                new THREE.Vector3(-8, 0.01, -14)
+            ];
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const border = new THREE.Line(lineGeo, lineMat);
+            scene.add(border);
+
+            // Goals
+            const goalGeo = new THREE.BoxGeometry(4, 2, 0.2);
+            const goalMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+            const goalTop = new THREE.Mesh(goalGeo, goalMat);
+            goalTop.position.set(0, 1, -14);
+            scene.add(goalTop);
+
+            // Ball
+            const ballGeo = new THREE.SphereGeometry(0.35, 32, 32);
+            const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+            ball = new THREE.Mesh(ballGeo, ballMat);
+            ball.position.set(0, 0.35, 0);
+            scene.add(ball);
+
+            // Player (Vedruna - Navy & Yellow)
+            const playerGeo = new THREE.CapsuleGeometry(0.4, 1, 4, 8);
+            const playerMat = new THREE.MeshStandardMaterial({ color: 0x1D3557 });
+            player = new THREE.Mesh(playerGeo, playerMat);
+            player.position.set(0, 0.9, 4);
+            scene.add(player);
+
+            // Rival (Red)
+            const rivalMat = new THREE.MeshStandardMaterial({ color: 0xE63946 });
+            rival = new THREE.Mesh(playerGeo, rivalMat);
+            rival.position.set(0, 0.9, -4);
+            scene.add(rival);
+
+            setupJoystick();
+            animate();
+        }
+
+        function setupJoystick() {
+            const base = document.getElementById('joystick-base');
+            const stick = document.getElementById('joystick-stick');
+            let active = false;
+            let center = {x: 55, y: 55};
+
+            base.addEventListener('pointerdown', (e) => {
+                active = true;
+            });
+            window.addEventListener('pointermove', (e) => {
+                if (!active) return;
+                const rect = base.getBoundingClientRect();
+                let x = e.clientX - rect.left - center.x;
+                let y = e.clientY - rect.top - center.y;
+                let dist = Math.sqrt(x*x + y*y);
+                let maxDist = 40;
+                if (dist > maxDist) {
+                    x = (x / dist) * maxDist;
+                    y = (y / dist) * maxDist;
+                }
+                stick.style.transform = `translate(${x}px, ${y}px)`;
+                joyVector.x = x / maxDist;
+                joyVector.y = y / maxDist;
+            });
+            window.addEventListener('pointerup', () => {
+                active = false;
+                joyVector.x = 0;
+                joyVector.y = 0;
+                stick.style.transform = `translate(0px, 0px)`;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameActive) {
+                // Move player based on joystick
+                player.position.x += joyVector.x * 0.12;
+                player.position.z += joyVector.y * 0.12;
+
+                // Boundary limits
+                player.position.x = Math.max(-7.5, Math.min(7.5, player.position.x));
+                player.position.z = Math.max(-13.5, Math.min(13.5, player.position.z));
+
+                // Ball physics & friction
+                ball.position.x += ballVel.x;
+                ball.position.y += ballVel.y;
+                ball.position.z += ballVel.z;
+                ballVel.x *= 0.95;
+                ballVel.z *= 0.95;
+
+                if (ball.position.y > 0.35) {
+                    ballVel.y -= 0.02; // Gravity
+                } else {
+                    ball.position.y = 0.35;
+                    ballVel.y = 0;
+                }
+
+                // AI Rival movement
+                if (ball.position.z < rival.position.z) rival.position.z -= 0.04;
+                else rival.position.z += 0.04;
+
+                // Camera follow
+                camera.position.x = player.position.x * 0.5;
+                camera.position.z = player.position.z + 10;
+                camera.lookAt(player.position.x, 0, player.position.z - 2);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+    </script>
+</body>
+</html>

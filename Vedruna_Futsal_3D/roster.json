@@ -1,0 +1,28 @@
+{
+  "team": "CFS Cal Xirricló Balaguer Vedruna A",
+  "season": "2026-2027",
+  "category": "Benjamín",
+  "players": [
+    {"name": "Jan", "number": null},
+    {"name": "Roger", "number": null},
+    {"name": "Jan (Castillo)", "number": null},
+    {"name": "Tomàs", "number": null},
+    {"name": "Miguel", "number": null},
+    {"name": "Blai", "number": null},
+    {"name": "Lluc", "number": null},
+    {"name": "Boubacare", "number": null},
+    {"name": "Oleguer", "number": null},
+    {"name": "Josep", "number": null},
+    {"name": "Hugo", "number": null},
+    {"name": "Sebastian", "number": null},
+    {"name": "Biel", "number": null},
+    {"name": "David", "number": null},
+    {"name": "Patrick", "number": null}
+  ],
+  "rivals": [
+    {"name": "CF Salou Benjamí", "color": "#E63946"},
+    {"name": "FS Lleida Esportiu", "color": "#457B9D"},
+    {"name": "CFS Mollerussa", "color": "#2A9D8F"},
+    {"name": "Balaguer CF Vedruna B", "color": "#F4A261"}
+  ]
+}
